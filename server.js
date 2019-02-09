@@ -1,40 +1,28 @@
-const express = require('express')
-const knex = require('knex')
-const server = express();
-const dbConfig = require('./knexfile.js')
-const db = knex(dbConfig.development)
-const PORT = 5656
+const express = require("express");
+const users = require("./users.js");
 
-server.use(express.json())
+ const server = express();
 
-server.get('/api/user', (req, res) => {
-    db('user').then(user => {
-        res.status(200).json(user)
-    })
-    .catch(error => { res.status(400).json({ error: 'There was an error'})
-  })
-})
+ server.use(express.json());
 
-server.post('/api/user', (req, res) => {
-    const body = req.body
-    db('user').insert(body).then( id => {
-        res.status(201).json(id)
-    })
-    .catch(error => { res.status(400).json({error: "There was an error posting the user"})
-  })
-})
+ server.get("/", async(req, res) => {
+   res.status(200).json({api: "running"});
+});
 
-server.delete('/api/user/:id', (req, res) => {
-    const {id} = req.params
-    db('user').where({id}).del()
-      .then( id => {
-          res.status(201).json(id)
-      })
-      .catch(error => { res.status(400).json({error: "There was an error deleting the user"})
-    })
-})
+ server.get('/users', async (req, res) => {
+   const rows = await users.getAll();
 
+    res.status(200).json(rows);
+ });
 
-server.listen(PORT, () => {
-    console.log('Server is running on port ' + PORT)
-})
+  server.post("/users", async (req, res) => {
+   const userData = req.body;
+   if(userData.name){
+     const ids = await users.insert(userData);
+     res.status(201).json(ids);
+   } else {
+     res.status(400).json({error: "Missing the Username within body"})
+   }
+ });
+
+ module.exports = server;
